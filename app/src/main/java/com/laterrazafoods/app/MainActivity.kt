@@ -1,156 +1,468 @@
 package com.laterrazafoods.app
 
-import android.app.*
+import android.app.Activity
 import android.os.Bundle
-import android.content.*
 import android.graphics.Color
-import android.view.*
+import android.graphics.Typeface
+import android.view.Gravity
+import android.view.View
 import android.widget.*
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
+data class Venta(
+    val fecha: String,
+    val efectivoIva: Long,
+    val efectivoSinIva: Long,
+    val tarjeta: Long,
+    val transferenciaIva: Long,
+    val transferenciaSinIva: Long
+)
+
 data class Gasto(
-    val id: Long,
     val fecha: String,
     val proveedor: String,
     val monto: Long,
-    val conIva: Boolean,
-    val categoria: String
+    val categoria: String,
+    val conIva: Boolean
 )
 
 class MainActivity : Activity() {
+
+    private val ventas = mutableListOf<Venta>()
     private val gastos = mutableListOf<Gasto>()
-    private lateinit var prefs: android.content.SharedPreferences
-    private val fmt = NumberFormat.getCurrencyInstance(Locale("es","CL"))
+
+    private lateinit var contenido: LinearLayout
+
+    private val oro = Color.rgb(245, 174, 20)
+    private val negro = Color.rgb(15, 15, 15)
+    private val blanco = Color.WHITE
+    private val gris = Color.rgb(245, 242, 238)
+
+    private val formatoMoneda =
+        NumberFormat.getCurrencyInstance(Locale("es", "CL"))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        prefs = getSharedPreferences("gastos", MODE_PRIVATE)
-        cargar()
         mostrarInicio()
     }
 
-    private fun dinero(n: Long): String {
-        fmt.maximumFractionDigits = 0
-        return fmt.format(n)
-    }
-
-    private fun hoy(): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-
-    private fun cargar() {
-        val raw = prefs.getString("items", "") ?: ""
-        if (raw.isBlank()) return
-        raw.split("\n").forEach {
-            val p = it.split("|")
-            if (p.size == 6) gastos.add(Gasto(p[0].toLong(), p[1], p[2], p[3].toLong(), p[4]=="1", p[5]))
-        }
-    }
-
-    private fun guardar() {
-        val raw = gastos.joinToString("\n") { "${it.id}|${it.fecha}|${it.proveedor.replace("|"," ")}|${it.monto}|${if(it.conIva) "1" else "0"}|${it.categoria}" }
-        prefs.edit().putString("items", raw).apply()
-    }
-
     private fun mostrarInicio() {
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(28, 24, 28, 24)
+        contenido = LinearLayout(this)
+        contenido.orientation = LinearLayout.VERTICAL
+        contenido.setPadding(24, 20, 24, 30)
+        contenido.setBackgroundColor(negro)
+
+        val scroll = ScrollView(this)
+        scroll.addView(contenido)
+
+        setContentView(scroll)
+
+        // Encabezado
+        val titulo = TextView(this)
+        titulo.text = "LA TERRAZA\nFOODS"
+        titulo.textSize = 30f
+        titulo.setTextColor(oro)
+        titulo.gravity = Gravity.CENTER
+        titulo.setTypeface(null, Typeface.BOLD)
+        titulo.setPadding(0, 20, 0, 10)
+        contenido.addView(titulo)
+
+        val subtitulo = TextView(this)
+        subtitulo.text = "CONTROL MENSUAL"
+        subtitulo.textSize = 15f
+        subtitulo.setTextColor(blanco)
+        subtitulo.gravity = Gravity.CENTER
+        subtitulo.setPadding(0, 0, 0, 25)
+        contenido.addView(subtitulo)
+
+        agregarBoton("💰  VENTAS DIARIAS") {
+            mostrarVentas()
         }
-        val title = TextView(this).apply {
-            text = "La Terraza Foods, Control Mensual"
-            textSize = 27f
-            setTextColor(Color.rgb(25,25,25))
+
+        agregarBoton("🧾  GASTOS") {
+            mostrarGastos()
         }
-        val subtitle = TextView(this).apply {
-            text = "Control de gastos · IVA 19%"
-            textSize = 15f
-            setPadding(0,4,0,22)
+
+        agregarBoton("🏪  GASTOS BÁSICOS") {
+            mostrarGastosBasicos()
         }
-        root.addView(title)
-        root.addView(subtitle)
 
-        val day = TextView(this).apply { textSize = 18f; setPadding(0,8,0,18) }
-        root.addView(day)
-
-        val btnAdd = Button(this).apply { text = "＋ Agregar gasto" }
-        val btnHistory = Button(this).apply { text = "Historial" }
-        root.addView(btnAdd)
-        root.addView(btnHistory)
-
-        val datePicker = EditText(this).apply {
-            hint = "Fecha del resumen (AAAA-MM-DD)"
-            setText(hoy())
-            inputType = android.text.InputType.TYPE_CLASS_DATETIME
-            setPadding(12,12,12,12)
+        agregarBoton("📊  RESUMEN") {
+            mostrarResumen()
         }
-        root.addView(datePicker)
 
-        fun refresh() {
-            val d = datePicker.text.toString()
-            val list = gastos.filter { it.fecha == d }
-            val total = list.sumOf { it.monto }
-            val con = list.filter { it.conIva }.sumOf { it.monto }
-            val sin = list.filter { !it.conIva }.sumOf { it.monto }
-            val iva = list.filter { it.conIva }.sumOf { (it.monto * 19) / 119 }
-            day.text = "RESUMEN DIARIO\n\nTotal: ${dinero(total)}\nCon IVA: ${dinero(con)}\nSin IVA: ${dinero(sin)}\nIVA crédito fiscal: ${dinero(iva)}\nCompras: ${list.size}"
+        agregarBoton("📅  HISTORIAL") {
+            mostrarHistorial()
         }
-        datePicker.setOnFocusChangeListener { _, _ -> refresh() }
-        datePicker.setOnEditorActionListener { _,_,_ -> refresh(); false }
-        refresh()
-
-        btnAdd.setOnClickListener { mostrarAgregar() }
-        btnHistory.setOnClickListener { mostrarHistorial() }
-
-        setContentView(root)
     }
 
-    private fun mostrarAgregar() {
-        val root = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(28,24,28,24) }
-        val title=TextView(this).apply { text="Agregar gasto"; textSize=25f }
-        root.addView(title)
-        fun campo(h:String): EditText = EditText(this).apply { hint=h; setPadding(10,8,10,8) }
-        val fecha=campo("Fecha (AAAA-MM-DD)"); fecha.setText(hoy())
-        val proveedor=campo("Proveedor")
-        val monto=campo("Monto total pagado"); monto.inputType=2
-        val cat=campo("Categoría (Alimentos, Insumos, etc.)")
-        val tipo=Spinner(this)
-        tipo.adapter=ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, arrayOf("Compra con IVA","Compra sin IVA"))
-        root.addView(fecha);root.addView(proveedor);root.addView(monto);root.addView(cat);root.addView(tipo)
-        val info=TextView(this);root.addView(info)
-        monto.setOnKeyListener { _,_,_ ->
-            val n=monto.text.toString().toLongOrNull()?:0
-            info.text=if(tipo.selectedItemPosition==0 && n>0) "Neto: ${dinero(n-(n*19/119))} · IVA: ${dinero(n*19/119)}" else ""
-            false
+    private fun agregarBoton(texto: String, accion: () -> Unit) {
+        val boton = Button(this)
+        boton.text = texto
+        boton.textSize = 17f
+        boton.setTextColor(negro)
+        boton.setTypeface(null, Typeface.BOLD)
+        boton.setBackgroundColor(oro)
+        boton.setPadding(10, 18, 10, 18)
+
+        val parametros = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        parametros.setMargins(0, 8, 0, 8)
+
+        contenido.addView(boton, parametros)
+        boton.setOnClickListener { accion() }
+    }
+
+    private fun tituloPantalla(texto: String) {
+        contenido.removeAllViews()
+
+        val titulo = TextView(this)
+        titulo.text = texto
+        titulo.textSize = 25f
+        titulo.setTextColor(oro)
+        titulo.setTypeface(null, Typeface.BOLD)
+        titulo.gravity = Gravity.CENTER
+        titulo.setPadding(0, 15, 0, 25)
+
+        contenido.addView(titulo)
+    }
+
+    private fun campo(texto: String): EditText {
+        val campo = EditText(this)
+        campo.hint = texto
+        campo.textSize = 16f
+        campo.setTextColor(blanco)
+        campo.setHintTextColor(Color.LTGRAY)
+        campo.setPadding(12, 12, 12, 12)
+
+        contenido.addView(campo)
+
+        return campo
+    }
+
+    private fun mostrarVentas() {
+        tituloPantalla("VENTAS DIARIAS")
+
+        val fecha = SimpleDateFormat(
+            "yyyy-MM-dd",
+            Locale.US
+        ).format(Date())
+
+        val fechaTexto = TextView(this)
+        fechaTexto.text = "Fecha: $fecha"
+        fechaTexto.textSize = 17f
+        fechaTexto.setTextColor(blanco)
+        contenido.addView(fechaTexto)
+
+        val efectivoIva = campo("Efectivo CON IVA")
+        val efectivoSinIva = campo("Efectivo SIN IVA")
+        val tarjeta = campo("Tarjeta de crédito")
+        val transferenciaIva = campo("Transferencia CON IVA")
+        val transferenciaSinIva = campo("Transferencia SIN IVA")
+
+        val guardar = botonAccion("GUARDAR VENTAS")
+
+        guardar.setOnClickListener {
+            val venta = Venta(
+                fecha,
+                numero(efectivoIva),
+                numero(efectivoSinIva),
+                numero(tarjeta),
+                numero(transferenciaIva),
+                numero(transferenciaSinIva)
+            )
+
+            ventas.add(venta)
+
+            Toast.makeText(
+                this,
+                "Ventas guardadas correctamente",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            mostrarInicio()
         }
-        val save=Button(this).apply{text="Guardar gasto"}
-        val back=Button(this).apply{text="Volver"}
-        root.addView(save);root.addView(back)
-        save.setOnClickListener {
-            val n=monto.text.toString().toLongOrNull()?:0
-            if(fecha.text.isBlank()||proveedor.text.isBlank()||n<=0){Toast.makeText(this,"Completa fecha, proveedor y monto",Toast.LENGTH_SHORT).show();return@setOnClickListener}
-            gastos.add(Gasto(System.currentTimeMillis(),fecha.text.toString(),proveedor.text.toString(),n,tipo.selectedItemPosition==0,cat.text.toString().ifBlank{"Otros"}))
-            guardar();Toast.makeText(this,"Gasto guardado",Toast.LENGTH_SHORT).show();mostrarInicio()
+
+        contenido.addView(guardar)
+
+        val volver = botonSecundario("VOLVER")
+        volver.setOnClickListener { mostrarInicio() }
+        contenido.addView(volver)
+    }
+
+    private fun mostrarGastos() {
+        tituloPantalla("GASTOS")
+
+        val fecha = SimpleDateFormat(
+            "yyyy-MM-dd",
+            Locale.US
+        ).format(Date())
+
+        val proveedor = campo("Proveedor")
+        val monto = campo("Monto total pagado")
+        val categoria = campo("Categoría")
+
+        val iva = CheckBox(this)
+        iva.text = "Compra con IVA"
+        iva.textSize = 17f
+        iva.setTextColor(blanco)
+        iva.isChecked = true
+        contenido.addView(iva)
+
+        val guardar = botonAccion("GUARDAR GASTO")
+
+        guardar.setOnClickListener {
+            if (proveedor.text.toString().trim().isEmpty()) {
+                proveedor.error = "Ingrese el proveedor"
+                return@setOnClickListener
+            }
+
+            if (numero(monto) <= 0) {
+                monto.error = "Ingrese un monto"
+                return@setOnClickListener
+            }
+
+            gastos.add(
+                Gasto(
+                    fecha,
+                    proveedor.text.toString(),
+                    numero(monto),
+                    categoria.text.toString(),
+                    iva.isChecked
+                )
+            )
+
+            Toast.makeText(
+                this,
+                "Gasto guardado correctamente",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            mostrarInicio()
         }
-        back.setOnClickListener{mostrarInicio()}
-        setContentView(root)
+
+        contenido.addView(guardar)
+
+        val volver = botonSecundario("VOLVER")
+        volver.setOnClickListener { mostrarInicio() }
+        contenido.addView(volver)
+    }
+
+    private fun mostrarGastosBasicos() {
+        tituloPantalla("GASTOS BÁSICOS")
+
+        val fecha = SimpleDateFormat(
+            "yyyy-MM-dd",
+            Locale.US
+        ).format(Date())
+
+        val proveedor = campo("Proveedor / empresa")
+        val monto = campo("Monto pagado")
+
+        val categoria = Spinner(this)
+
+        val opciones = arrayOf(
+            "Luz",
+            "Agua",
+            "Gas",
+            "Internet",
+            "Teléfono",
+            "Arriendo",
+            "Patente",
+            "Otros"
+        )
+
+        categoria.adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_dropdown_item,
+            opciones
+        )
+
+        contenido.addView(categoria)
+
+        val iva = CheckBox(this)
+        iva.text = "Gasto con IVA"
+        iva.setTextColor(blanco)
+        iva.textSize = 17f
+        contenido.addView(iva)
+
+        val guardar = botonAccion("GUARDAR GASTO BÁSICO")
+
+        guardar.setOnClickListener {
+
+            if (proveedor.text.toString().trim().isEmpty()) {
+                proveedor.error = "Ingrese el proveedor"
+                return@setOnClickListener
+            }
+
+            if (numero(monto) <= 0) {
+                monto.error = "Ingrese el monto"
+                return@setOnClickListener
+            }
+
+            gastos.add(
+                Gasto(
+                    fecha,
+                    proveedor.text.toString(),
+                    numero(monto),
+                    categoria.selectedItem.toString(),
+                    iva.isChecked
+                )
+            )
+
+            Toast.makeText(
+                this,
+                "Gasto básico guardado",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            mostrarInicio()
+        }
+
+        contenido.addView(guardar)
+
+        val volver = botonSecundario("VOLVER")
+        volver.setOnClickListener { mostrarInicio() }
+        contenido.addView(volver)
+    }
+
+    private fun mostrarResumen() {
+        tituloPantalla("RESUMEN")
+
+        var totalVentas = 0L
+
+        ventas.forEach {
+            totalVentas += it.efectivoIva
+            totalVentas += it.efectivoSinIva
+            totalVentas += it.tarjeta
+            totalVentas += it.transferenciaIva
+            totalVentas += it.transferenciaSinIva
+        }
+
+        var totalGastos = 0L
+
+        gastos.forEach {
+            totalGastos += it.monto
+        }
+
+        val resultado = totalVentas - totalGastos
+
+        agregarTextoGrande(
+            "VENTAS TOTALES\n${dinero(totalVentas)}"
+        )
+
+        agregarTextoGrande(
+            "GASTOS TOTALES\n${dinero(totalGastos)}"
+        )
+
+        agregarTextoGrande(
+            "RESULTADO\n${dinero(resultado)}"
+        )
+
+        val volver = botonSecundario("VOLVER")
+        volver.setOnClickListener { mostrarInicio() }
+        contenido.addView(volver)
     }
 
     private fun mostrarHistorial() {
-        val root=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(28,24,28,24)}
-        root.addView(TextView(this).apply{text="Historial";textSize=25f})
-        val scroll=ScrollView(this)
-        val list=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL}
-        if(gastos.isEmpty()) list.addView(TextView(this).apply{text="No hay gastos registrados.";setPadding(0,20,0,20)})
-        gastos.sortedByDescending{it.id}.forEach { g ->
-            val row=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(0,12,0,12)}
-            row.addView(TextView(this).apply{text="${g.fecha} · ${g.proveedor}\n${g.categoria} · ${if(g.conIva)"Con IVA" else "Sin IVA"}\n${dinero(g.monto)}${if(g.conIva)" · IVA ${dinero((g.monto*19)/119)}" else ""}";textSize=16f})
-            val del=Button(this).apply{text="Eliminar"}
-            del.setOnClickListener{gastos.removeIf{x->x.id==g.id};guardar();mostrarHistorial()}
-            row.addView(del);list.addView(row)
+        tituloPantalla("HISTORIAL")
+
+        if (ventas.isEmpty() && gastos.isEmpty()) {
+            agregarTexto("Todavía no existen registros.")
         }
-        scroll.addView(list);root.addView(scroll,LinearLayout.LayoutParams(-1,0,1f))
-        val back=Button(this).apply{text="Volver"};back.setOnClickListener{mostrarInicio()};root.addView(back)
-        setContentView(root)
+
+        if (ventas.isNotEmpty()) {
+            agregarTexto("VENTAS")
+
+            ventas.forEach {
+                val total =
+                    it.efectivoIva +
+                    it.efectivoSinIva +
+                    it.tarjeta +
+                    it.transferenciaIva +
+                    it.transferenciaSinIva
+
+                agregarTexto(
+                    "${it.fecha}\nTotal: ${dinero(total)}\n" +
+                    "Efectivo IVA: ${dinero(it.efectivoIva)}\n" +
+                    "Efectivo sin IVA: ${dinero(it.efectivoSinIva)}\n" +
+                    "Tarjeta: ${dinero(it.tarjeta)}\n" +
+                    "Transferencia IVA: ${dinero(it.transferenciaIva)}\n" +
+                    "Transferencia sin IVA: ${dinero(it.transferenciaSinIva)}"
+                )
+            }
+        }
+
+        if (gastos.isNotEmpty()) {
+            agregarTexto("GASTOS")
+
+            gastos.forEach {
+                agregarTexto(
+                    "${it.fecha}\n" +
+                    "${it.proveedor}\n" +
+                    "${it.categoria}\n" +
+                    "${dinero(it.monto)}\n" +
+                    if (it.conIva) "Con IVA" else "Sin IVA"
+                )
+            }
+        }
+
+        val volver = botonSecundario("VOLVER")
+        volver.setOnClickListener { mostrarInicio() }
+        contenido.addView(volver)
     }
-}
+
+    private fun agregarTexto(texto: String) {
+        val t = TextView(this)
+        t.text = texto
+        t.textSize = 16f
+        t.setTextColor(blanco)
+        t.setPadding(10, 15, 10, 15)
+
+        contenido.addView(t)
+    }
+
+    private fun agregarTextoGrande(texto: String) {
+        val t = TextView(this)
+        t.text = texto
+        t.textSize = 21f
+        t.setTypeface(null, Typeface.BOLD)
+        t.setTextColor(oro)
+        t.setPadding(10, 20, 10, 20)
+
+        contenido.addView(t)
+    }
+
+    private fun botonAccion(texto: String): Button {
+        val boton = Button(this)
+        boton.text = texto
+        boton.textSize = 17f
+        boton.setTypeface(null, Typeface.BOLD)
+        boton.setTextColor(negro)
+        boton.setBackgroundColor(oro)
+        boton.setPadding(10, 15, 10, 15)
+
+        val p = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        p.setMargins(0, 15, 0, 10)
+
+        contenido.addView(boton, p)
+
+        return boton
+    }
+
+    private fun botonSecundario(texto: String): Button {
+        val boton = Button(this)
+        boton.text = texto
+        boton.textSize = 16f
+        boton.setTextColor(blanco)
+        boton.setBackgroundColor(Color.DKGRAY)
+
+        val p = LinearLayout.LayoutParams(
+            LinearLayout
