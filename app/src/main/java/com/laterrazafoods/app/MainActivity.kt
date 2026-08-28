@@ -55,6 +55,18 @@ class MainActivity : Activity() {
         contenido.setBackgroundColor(negro)
 
         val scroll = ScrollView(this)
+        val logo = ImageView(this)
+logo.setImageResource(R.drawable.logo)
+logo.scaleType = ImageView.ScaleType.FIT_CENTER
+logo.adjustViewBounds = true
+
+val logoParams = LinearLayout.LayoutParams(
+    LinearLayout.LayoutParams.MATCH_PARENT,
+    260
+)
+logo.layoutParams = logoParams
+
+contenido.addView(logo)
         scroll.addView(contenido)
 
         setContentView(scroll)
