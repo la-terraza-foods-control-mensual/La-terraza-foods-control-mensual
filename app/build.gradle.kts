@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-        namespace = "com.laterrazfoods.controlmensual"
+        namespace = "com.laterrazafoods.app"
             compileSdk = 35
 
                 defaultConfig {
