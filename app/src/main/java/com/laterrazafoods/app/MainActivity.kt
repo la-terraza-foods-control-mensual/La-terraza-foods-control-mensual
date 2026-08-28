@@ -476,5 +476,26 @@ contenido.addView(logo)
         boton.setTextColor(blanco)
         boton.setBackgroundColor(Color.DKGRAY)
 
-        val p = LinearLayout.LayoutParams(
-            LinearLayout
+                val p = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        p.setMargins(0, 10, 0, 10)
+
+        contenido.addView(boton, p)
+
+        return boton
+    }
+
+    private fun numero(campo: EditText): Long {
+        return campo.text.toString()
+            .replace(".", "")
+            .replace(",", "")
+            .trim()
+            .toLongOrNull() ?: 0L
+    }
+
+    private fun dinero(valor: Long): String {
+        return formatoMoneda.format(valor)
+    }
+}
