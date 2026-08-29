@@ -1,4 +1,4 @@
-sepackage com.laterrazafoods.app
+package com.laterrazafoods.app
 
 import android.app.Activity
 import android.os.Bundle
