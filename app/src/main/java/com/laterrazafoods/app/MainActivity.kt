@@ -17,7 +17,7 @@ data class Venta(
     val efectivoSinIva: Long,
     val tarjeta: Long,
     val transferenciaIva: Long,
-    val transferenciaSinIva: Long
+    val transferenciaSinIva: Long,
     val glosa: String
 )
 
