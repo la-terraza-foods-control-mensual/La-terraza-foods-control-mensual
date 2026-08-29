@@ -426,7 +426,7 @@ contenido.addView(volver)
 
         val volver = botonSecundario("VOLVER")
         volver.setOnClickListener { mostrarInicio() }
-  volver.setOnClickListener { mostrarInicio() }      
+   contenido.addView(volver)   
     }
 
     private fun agregarTexto(texto: String) {
