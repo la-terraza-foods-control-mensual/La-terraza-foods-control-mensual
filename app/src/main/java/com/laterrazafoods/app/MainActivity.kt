@@ -18,6 +18,7 @@ data class Venta(
     val tarjeta: Long,
     val transferenciaIva: Long,
     val transferenciaSinIva: Long
+    val glosa: String
 )
 
 data class Gasto(
@@ -141,14 +142,14 @@ class MainActivity : Activity() {
         resumenPanel.addView(detalle)
 
         // MEN脷: mantiene los botones y sus funciones.
-        agregarBoton("鉃�  AGREGAR GASTO") { mostrarGastos() }
-        agregarBoton("馃Ь  MIS GASTOS") { mostrarMisGastos() }
-        agregarBoton("馃搳  RESUMEN") { mostrarResumen() }
-        agregarBoton("馃彔  GASTOS B脕SICOS") { mostrarGastosBasicos() }
-        agregarBoton("IVA  GASTOS CON IVA") { mostrarGastosConIva() }
-        agregarBoton("馃搵  REPORTES") { mostrarReportes() }
-        agregarBoton("馃挵  REGISTRAR VENTAS DIARIAS") { mostrarVentas() }
-        agregarBoton("鈿欙笍  CONFIGURACI脫N") { mostrarConfiguracion() }
+                agregarBoton("GASTOS") { mostrarGastos() }
+        agregarBoton("VENTAS") { mostrarVentas() }
+        agregarBoton("INFORMES") { mostrarReportes() }
+        agregarBoton("RESUMEN") { mostrarResumen() }
+        agregarBoton("HISTORIAL") { mostrarMisGastos() }
+        agregarBoton("IVA Y PPM 1%") { mostrarReportes() }
+        agregarBoton("CALENDARIO") { mostrarResumen() }
+        agregarBoton("CONFIGURACIÓN") { mostrarConfiguracion() }
     }
 
     private fun agregarBoton(texto: String, accion: () -> Unit) {
@@ -204,8 +205,36 @@ class MainActivity : Activity() {
         return campo
     }
 
-    private fun mostrarVentas() {
-        tituloPantalla("VENTAS DIARIAS")
+    
+
+           private fun mostrarVentas() {
+        tituloPantalla("VENTAS")
+
+        agregarBoton("VENTAS CON TARJETAS") {
+            mostrarFormularioVenta("VENTAS CON TARJETAS", "TARJETA")
+        }
+
+        agregarBoton("VENTAS EFECTIVO CON IVA") {
+            mostrarFormularioVenta("VENTAS EFECTIVO CON IVA", "EFECTIVO_IVA")
+        }
+
+        agregarBoton("VENTAS EFECTIVO SIN IVA") {
+            mostrarFormularioVenta("VENTAS EFECTIVO SIN IVA", "EFECTIVO_SIN_IVA")
+        }
+
+        agregarBoton("VENTAS TRANSFERENCIA CON IVA") {
+            mostrarFormularioVenta("VENTAS TRANSFERENCIA CON IVA", "TRANSFERENCIA_IVA")
+        }
+
+        agregarBoton("VENTAS TRANSFERENCIA SIN IVA") {
+            mostrarFormularioVenta("VENTAS TRANSFERENCIA SIN IVA", "TRANSFERENCIA_SIN_IVA")
+        }
+
+        agregarVolver()
+    }
+
+    private fun mostrarFormularioVenta(tipo: String, forma: String) {
+        tituloPantalla(tipo)
 
         val fecha = SimpleDateFormat(
             "yyyy-MM-dd",
@@ -214,29 +243,51 @@ class MainActivity : Activity() {
 
         agregarTexto("Fecha: $fecha")
 
-        val efectivoIva = campo("Efectivo CON IVA")
-        val efectivoSinIva = campo("Efectivo SIN IVA")
-        val tarjeta = campo("Tarjeta de cr茅dito")
-        val transferenciaIva = campo("Transferencia CON IVA")
-        val transferenciaSinIva = campo("Transferencia SIN IVA")
+        val monto = campo("Monto")
+        val glosa = campo("Glosa")
 
-        val guardar = botonAccion("GUARDAR VENTAS")
+        val guardar = botonAccion("GUARDAR VENTA")
 
         guardar.setOnClickListener {
+            if (numero(monto) <= 0) {
+                monto.error = "Ingrese un monto"
+                return@setOnClickListener
+            }
+
+            if (glosa.text.toString().trim().isEmpty()) {
+                glosa.error = "Ingrese una glosa"
+                return@setOnClickListener
+            }
+
+            var efectivoIva = 0L
+            var efectivoSinIva = 0L
+            var tarjeta = 0L
+            var transferenciaIva = 0L
+            var transferenciaSinIva = 0L
+
+            when (forma) {
+                "EFECTIVO_IVA" -> efectivoIva = numero(monto)
+                "EFECTIVO_SIN_IVA" -> efectivoSinIva = numero(monto)
+                "TARJETA" -> tarjeta = numero(monto)
+                "TRANSFERENCIA_IVA" -> transferenciaIva = numero(monto)
+                "TRANSFERENCIA_SIN_IVA" -> transferenciaSinIva = numero(monto)
+            }
+
             ventas.add(
                 Venta(
                     fecha,
-                    numero(efectivoIva),
-                    numero(efectivoSinIva),
-                    numero(tarjeta),
-                    numero(transferenciaIva),
-                    numero(transferenciaSinIva)
+                    efectivoIva,
+                    efectivoSinIva,
+                    tarjeta,
+                    transferenciaIva,
+                    transferenciaSinIva,
+                    glosa.text.toString().trim()
                 )
             )
 
             Toast.makeText(
                 this,
-                "Ventas guardadas correctamente",
+                "Venta guardada correctamente",
                 Toast.LENGTH_SHORT
             ).show()
 
@@ -245,47 +296,66 @@ class MainActivity : Activity() {
 
         contenido.addView(guardar)
         agregarVolver()
-    }
-
+    } 
     private fun mostrarGastos() {
         tituloPantalla("GASTOS")
+
+        agregarBoton("COMPRAS CON FACTURA") {
+            mostrarFormularioGasto("COMPRAS CON FACTURA", true)
+        }
+
+        agregarBoton("COMPRAS SIN FACTURA") {
+            mostrarFormularioGasto("COMPRAS SIN FACTURA", false)
+        }
+
+        agregarBoton("GASTOS BÁSICOS CON FACTURA") {
+            mostrarFormularioGasto("GASTOS BÁSICOS CON FACTURA", true)
+        }
+
+        agregarBoton("GASTOS BÁSICOS SIN FACTURA") {
+            mostrarFormularioGasto("GASTOS BÁSICOS SIN FACTURA", false)
+        }
+
+        agregarBoton("SUELDOS") {
+            mostrarFormularioGasto("SUELDOS", false)
+        }
+
+        agregarVolver()
+    }
+
+    private fun mostrarFormularioGasto(tipo: String, tieneIva: Boolean) {
+        tituloPantalla(tipo)
 
         val fecha = SimpleDateFormat(
             "yyyy-MM-dd",
             Locale.US
         ).format(Date())
 
-        val proveedor = campo("Proveedor")
-        val monto = campo("Monto total pagado")
-        val categoria = campo("Categor铆a")
+        agregarTexto("Fecha: $fecha")
 
-        val iva = CheckBox(this)
-        iva.text = "Compra con IVA"
-        iva.textSize = 17f
-        iva.setTextColor(blanco)
-        iva.isChecked = true
-        contenido.addView(iva)
+        val monto = campo("Monto")
+        val glosa = campo("Glosa")
 
         val guardar = botonAccion("GUARDAR GASTO")
 
         guardar.setOnClickListener {
-            if (proveedor.text.toString().trim().isEmpty()) {
-                proveedor.error = "Ingrese el proveedor"
+            if (numero(monto) <= 0) {
+                monto.error = "Ingrese un monto"
                 return@setOnClickListener
             }
 
-            if (numero(monto) <= 0) {
-                monto.error = "Ingrese un monto"
+            if (glosa.text.toString().trim().isEmpty()) {
+                glosa.error = "Ingrese una glosa"
                 return@setOnClickListener
             }
 
             gastos.add(
                 Gasto(
                     fecha,
-                    proveedor.text.toString(),
+                    glosa.text.toString().trim(),
                     numero(monto),
-                    categoria.text.toString(),
-                    iva.isChecked
+                    tipo,
+                    tieneIva
                 )
             )
 
@@ -301,7 +371,6 @@ class MainActivity : Activity() {
         contenido.addView(guardar)
         agregarVolver()
     }
-
     private fun mostrarGastosBasicos() {
         tituloPantalla("GASTOS B脕SICOS")
 
