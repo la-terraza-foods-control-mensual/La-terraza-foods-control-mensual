@@ -89,26 +89,38 @@ contenido.addView(logo)
         subtitulo.setPadding(0, 0, 0, 25)
         contenido.addView(subtitulo)
 
-        agregarBoton("💰  VENTAS DIARIAS") {
-            mostrarVentas()
-        }
-
-        agregarBoton("🧾  GASTOS") {
+              agregarBoton("➕  AGREGAR GASTO") {
             mostrarGastos()
         }
 
-        agregarBoton("🏪  GASTOS BÁSICOS") {
-            mostrarGastosBasicos()
+        agregarBoton("🧾  MIS GASTOS") {
+            mostrarMisGastos()
         }
 
         agregarBoton("📊  RESUMEN") {
             mostrarResumen()
         }
 
-        agregarBoton("📅  HISTORIAL") {
-            mostrarHistorial()
+        agregarBoton("🏠  GASTOS BÁSICOS") {
+            mostrarGastosBasicos()
         }
-    }
+
+        agregarBoton("IVA  GASTOS CON IVA") {
+            mostrarGastosConIva()
+        }
+
+        agregarBoton("📋  REPORTES") {
+            mostrarReportes()
+        }
+
+        agregarBoton("💰  REGISTRAR VENTAS DIARIAS") {
+            mostrarVentas()
+        }
+
+        agregarBoton("⚙️  CONFIGURACIÓN") {
+            mostrarConfiguracion()
+        }
+    
 
     private fun agregarBoton(texto: String, accion: () -> Unit) {
         val boton = Button(this)
@@ -498,4 +510,99 @@ contenido.addView(volver)
     private fun dinero(valor: Long): String {
         return formatoMoneda.format(valor)
     }
+private fun mostrarMisGastos() {
+    tituloPantalla("MIS GASTOS")
+
+    if (gastos.isEmpty()) {
+        agregarTexto("Todavía no existen gastos registrados.")
+    } else {
+        gastos.forEach {
+            agregarTexto(
+                "${it.fecha}\n" +
+                "Proveedor: ${it.proveedor}\n" +
+                "Categoría: ${it.categoria}\n" +
+                "Monto: ${dinero(it.monto)}\n" +
+                if (it.conIva) "Con IVA" else "Sin IVA"
+            )
+        }
+    }
+
+    val volver = botonSecundario("VOLVER")
+    volver.setOnClickListener { mostrarInicio() }
+    contenido.addView(volver)
 }
+
+private fun mostrarGastosConIva() {
+    tituloPantalla("GASTOS CON IVA")
+
+    val gastosIva = gastos.filter { it.conIva }
+
+    if (gastosIva.isEmpty()) {
+        agregarTexto("No existen gastos con IVA registrados.")
+    } else {
+        var total = 0L
+
+        gastosIva.forEach {
+            total += it.monto
+
+            agregarTexto(
+                "${it.fecha}\n" +
+                "Proveedor: ${it.proveedor}\n" +
+                "Categoría: ${it.categoria}\n" +
+                "Monto: ${dinero(it.monto)}"
+            )
+        }
+
+        agregarTextoGrande("TOTAL CON IVA\n${dinero(total)}")
+    }
+
+    val volver = botonSecundario("VOLVER")
+    volver.setOnClickListener { mostrarInicio() }
+    contenido.addView(volver)
+}
+
+private fun mostrarReportes() {
+    tituloPantalla("REPORTES")
+
+    var totalVentas = 0L
+    var totalGastos = 0L
+
+    ventas.forEach {
+        totalVentas += it.efectivoIva
+        totalVentas += it.efectivoSinIva
+        totalVentas += it.tarjeta
+        totalVentas += it.transferenciaIva
+        totalVentas += it.transferenciaSinIva
+    }
+
+    gastos.forEach {
+        totalGastos += it.monto
+    }
+
+    val resultado = totalVentas - totalGastos
+
+    agregarTextoGrande("TOTAL VENTAS\n${dinero(totalVentas)}")
+    agregarTextoGrande("TOTAL GASTOS\n${dinero(totalGastos)}")
+    agregarTextoGrande("RESULTADO\n${dinero(resultado)}")
+
+    agregarTexto(
+        "Registros de ventas: ${ventas.size}\n" +
+        "Registros de gastos: ${gastos.size}"
+    )
+
+    val volver = botonSecundario("VOLVER")
+    volver.setOnClickListener { mostrarInicio() }
+    contenido.addView(volver)
+}
+
+private fun mostrarConfiguracion() {
+    tituloPantalla("CONFIGURACIÓN")
+
+    agregarTexto("LA TERRAZA FOODS")
+    agregarTexto("Control Mensual")
+    agregarTexto("Moneda: Peso chileno (CLP)")
+
+    val volver = botonSecundario("VOLVER")
+    volver.setOnClickListener { mostrarInicio() }
+    contenido.addView(volver)
+}}
