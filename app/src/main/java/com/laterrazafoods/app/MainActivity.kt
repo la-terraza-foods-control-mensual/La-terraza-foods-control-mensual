@@ -120,7 +120,7 @@ contenido.addView(logo)
         agregarBoton("⚙️  CONFIGURACIÓN") {
             mostrarConfiguracion()
         }
-    
+    }
 
     private fun agregarBoton(texto: String, accion: () -> Unit) {
         val boton = Button(this)
