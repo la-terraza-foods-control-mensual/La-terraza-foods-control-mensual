@@ -64,7 +64,7 @@ class MainActivity : Activity() {
         panel.orientation = LinearLayout.VERTICAL
         panel.gravity = Gravity.CENTER
         panel.setPadding(22, 20, 22, 22)
-        panel.background = fondoRedondeado(oro, 28)
+        panel.background = fondoRedondeado(oro, 28f)
 
         val panelParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -104,7 +104,7 @@ class MainActivity : Activity() {
         resumenPanel.orientation = LinearLayout.VERTICAL
         resumenPanel.gravity = Gravity.CENTER
         resumenPanel.setPadding(18, 12, 18, 12)
-        resumenPanel.background = fondoRedondeado(negro, 20)
+        resumenPanel.background = fondoRedondeado(negro, 20f)
         panel.addView(
             resumenPanel,
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -157,7 +157,7 @@ class MainActivity : Activity() {
         boton.textSize = 16f
         boton.setTextColor(negro)
         boton.setTypeface(null, Typeface.BOLD)
-        boton.background = fondoRedondeado(oro, 18)
+        boton.background = fondoRedondeado(oro, 18f)
         boton.setPadding(10, 16, 10, 16)
 
         val parametros = LinearLayout.LayoutParams(
@@ -510,7 +510,7 @@ class MainActivity : Activity() {
         boton.textSize = 17f
         boton.setTypeface(null, Typeface.BOLD)
         boton.setTextColor(negro)
-        boton.background = fondoRedondeado(oro, 18)
+        boton.background = fondoRedondeado(oro, 18f)
         boton.setPadding(10, 15, 10, 15)
         return boton
     }
@@ -521,7 +521,7 @@ class MainActivity : Activity() {
         boton.textSize = 16f
         boton.setTypeface(null, Typeface.BOLD)
         boton.setTextColor(blanco)
-        boton.background = fondoRedondeado(grisOscuro, 18)
+        boton.background = fondoRedondeado(grisOscuro, 18f)
         boton.setPadding(10, 14, 10, 14)
         return boton
     }
