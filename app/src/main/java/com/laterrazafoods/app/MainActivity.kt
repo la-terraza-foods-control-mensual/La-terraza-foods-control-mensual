@@ -1,4 +1,4 @@
-package com.laterrazafoods.app
+sepackage com.laterrazafoods.app
 
 import android.app.Activity
 import android.os.Bundle
@@ -426,7 +426,7 @@ contenido.addView(volver)
 
         val volver = botonSecundario("VOLVER")
         volver.setOnClickListener { mostrarInicio() }
-        
+  volver.setOnClickListener { mostrarInicio() }      
     }
 
     private fun agregarTexto(texto: String) {
