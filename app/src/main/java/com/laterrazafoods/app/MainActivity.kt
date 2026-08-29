@@ -262,7 +262,7 @@ contenido.addView(logo)
         val volver = botonSecundario("VOLVER")
         volver.setOnClickListener { mostrarInicio() }
 contenido.addView(volver)
-        contenido.addView(volver)
+    
     }
 
     private fun mostrarGastosBasicos() {
