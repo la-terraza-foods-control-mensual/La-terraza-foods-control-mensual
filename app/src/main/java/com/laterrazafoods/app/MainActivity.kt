@@ -116,7 +116,7 @@ contenido.addView(logo)
         agregarBoton("💰  REGISTRAR VENTAS DIARIAS") {
             mostrarVentas()
         }
-
+    
         agregarBoton("⚙️  CONFIGURACIÓN") {
             mostrarConfiguracion()
         }
